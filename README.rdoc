@@ -1,3 +1,15 @@
+== PeopleAdmin fork
+
+We were unable to confidently upgrade rails after 3.2.11 because of this issue:
+https://github.com/rails/rails/issues/9813
+
+Instead, we forked it at 3.2.11 and backported changes to make it ruby 2.0 
+compliant. We will continue to backport security fixes until we can upgrade to 
+rails 4.x.
+
+Always make your changes in a branch off of deploy, and merge it (no-fast forward) 
+back into deploy.
+
 == Welcome to Rails
 
 Rails is a web-application framework that includes everything needed to create
