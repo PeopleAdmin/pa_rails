@@ -1,3 +1,4 @@
+language: ruby
 script: 'ci/travis.rb'
 rvm:
   - 1.9.3
