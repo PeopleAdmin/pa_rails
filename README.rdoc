@@ -10,7 +10,7 @@ rails 4.x.
 Always make your changes in a branch off of deploy, and merge it (no-fast forward) 
 back into deploy.
 
-== Build Status {<img src="https://travis-ci.org/PeopleAdmin/rails.png" alt="Build Status" />}[https://travis-ci.org/PeopleAdmin/rails]
+== Build Status {<img src="https://travis-ci.org/PeopleAdmin/pa_rails.png" alt="Build Status" />}[https://travis-ci.org/PeopleAdmin/pa_rails]
 
 == Welcome to Rails
 
