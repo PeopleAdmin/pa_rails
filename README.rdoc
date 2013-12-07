@@ -10,6 +10,8 @@ rails 4.x.
 Always make your changes in a branch off of deploy, and merge it (no-fast forward) 
 back into deploy.
 
+== Build Status {<img src="https://travis-ci.org/PeopleAdmin/rails.png" alt="Build Status" />}[https://travis-ci.org/PeopleAdmin/rails]
+
 == Welcome to Rails
 
 Rails is a web-application framework that includes everything needed to create
@@ -78,10 +80,6 @@ can read more about Action Pack in its {README}[link:/rails/rails/blob/master/ac
 We encourage you to contribute to Ruby on Rails! Please check out the {Contributing to Rails
 guide}[http://edgeguides.rubyonrails.org/contributing_to_ruby_on_rails.html] for guidelines about how
 to proceed. {Join us}[http://contributors.rubyonrails.org]!
-
-== Build Status {<img src="https://secure.travis-ci.org/rails/rails.png"/>}[http://travis-ci.org/rails/rails]
-
-== Dependency Status {<img src="https://gemnasium.com/rails/rails.png?travis"/>}[https://gemnasium.com/rails/rails]
 
 == License
 
