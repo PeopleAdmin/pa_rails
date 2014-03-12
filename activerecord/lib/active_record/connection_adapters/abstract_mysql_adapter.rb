@@ -318,17 +318,7 @@ module ActiveRecord
       # SCHEMA STATEMENTS ========================================
 
       def structure_dump #:nodoc:
-        if supports_views?
-          sql = "SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'"
-        else
-          sql = "SHOW TABLES"
-        end
-
-        select_all(sql).map { |table|
-          table.delete('Table_type')
-          sql = "SHOW CREATE TABLE #{quote_table_name(table.to_a.first.last)}"
-          exec_query(sql).first['Create Table'] + ";\n\n"
-        }.join
+        (create_tables_sql + create_views_sql).join
       end
 
       # Drops the database specified on the +name+ attribute
@@ -663,6 +653,34 @@ module ActiveRecord
 
       def supports_views?
         version[0] >= 5
+      end
+
+      def create_tables_sql
+        if supports_views?
+          sql = "SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'"
+        else
+          sql = "SHOW TABLES"
+        end
+        extract_creation_sql(sql, 'Table')
+      end
+
+      def create_views_sql
+        if supports_views?
+          sql = "SHOW FULL TABLES WHERE Table_type = 'VIEW'"
+          select_all(sql)
+        else
+          []
+        end
+        extract_creation_sql(sql, 'View')
+      end
+
+      def extract_creation_sql(sql, type)
+        select_all(sql).map{|schema_obj|
+          schema_obj.delete('Table_type')
+          sql = "SHOW CREATE #{type.upcase} #{quote_table_name(schema_obj.to_a.first.last)}"
+          creation_sql = exec_query(sql).first["Create #{type.capitalize}"].gsub(/AUTO_INCREMENT=\d+/, '')
+          "#{creation_sql};\n\n"
+        }
       end
 
       def column_for(table_name, column_name)
