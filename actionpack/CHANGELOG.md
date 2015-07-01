@@ -1,8 +1,347 @@
-## Rails 3.2.11 ##
+## Rails 3.2.22 (Jun 16, 2015) ##
 
-* Strip nils from collections on JSON and XML posts. [CVE-2013-0155]
+* No changes.
 
-## Rails 3.2.10 ##
+
+## Rails 3.2.19 (Jul 2, 2014) ##
+
+*   Fix regression when using `ActionView::Helpers::TranslationHelper#translate` with
+    `options[:raise]`.
+
+    This regression was introduced at ec16ba75a5493b9da972eea08bae630eba35b62f.
+
+    *Shota Fukumori (sora_h)*
+
+
+## Rails 3.2.18 (May 6, 2014) ##
+
+*   Only accept actions without File::SEPARATOR in the name.
+
+    This will avoid directory traversal in implicit render.
+
+    Fixes: CVE-2014-0130
+
+    *Rafael Mendonça França*
+
+
+## Rails 3.2.17 (Feb 18, 2014) ##
+
+*   Use the reference for the mime type to get the format
+
+    Fixes: CVE-2014-0082
+
+*   Escape format, negative_format and units options of number helpers
+
+    Fixes: CVE-2014-0081
+
+
+## Rails 3.2.16 (Dec 12, 2013) ##
+
+*   Deep Munge the parameters for GET and POST Fixes CVE-2013-6417
+
+*   Stop using i18n's built in HTML error handling.  Fixes: CVE-2013-4491
+
+*   Escape the unit value provided to number_to_currency Fixes CVE-2013-6415
+
+*   Only use valid mime type symbols as cache keys CVE-2013-6414
+
+## Rails 3.2.15 (Oct 16, 2013) ##
+
+*   Fix `ActionDispatch::RemoteIp::GetIp#calculate_ip` to only check for spoofing
+    attacks if both `HTTP_CLIENT_IP` and `HTTP_X_FORWARDED_FOR` are set.
+
+    Fixes #12410
+    Backports #10844
+
+    *Tamir Duberstein*
+
+*   Fix the assert_recognizes test method so that it works when there are
+    constraints on the querystring.
+
+    Issue/Pull Request #9368
+    Backport #5219
+
+    *Brian Hahn*
+
+*   Fix to render partial by context(#11605).
+
+    *Kassio Borges*
+
+*   Fix `ActionDispatch::Assertions::ResponseAssertions#assert_redirected_to`
+    does not show user-supplied message.
+
+    Issue: when `assert_redirected_to` fails due to the response redirect not
+    matching the expected redirect the user-supplied message (second parameter)
+    is not shown. This message is only shown if the response is not a redirect.
+
+    *Alexey Chernenkov*
+
+
+## Rails 3.2.14 (Jul 22, 2013) ##
+
+*   Merge `:action` from routing scope and assign endpoint if both `:controller`
+    and `:action` are present. The endpoint assignment only occurs if there is
+    no `:to` present in the options hash so should only affect routes using the
+    shorthand syntax (i.e. endpoint is inferred from the the path).
+
+    Fixes #9856
+
+    *Yves Senn*, *Andrew White*
+
+*   Always escape the result of `link_to_unless` method.
+
+    Before:
+
+        link_to_unless(true, '<b>Showing</b>', 'github.com')
+        # => "<b>Showing</b>"
+
+    After:
+
+        link_to_unless(true, '<b>Showing</b>', 'github.com')
+        # => "&lt;b&gt;Showing&lt;/b&gt;"
+
+    *dtaniwaki*
+
+*   Use a case insensitive URI Regexp for #asset_path.
+
+    This fix a problem where the same asset path using different case are generating
+    different URIs.
+
+    Before:
+
+        image_tag("HTTP://google.com")
+        # => "<img alt=\"Google\" src=\"/assets/HTTP://google.com\" />"
+        image_tag("http://google.com")
+        # => "<img alt=\"Google\" src=\"http://google.com\" />"
+
+    After:
+
+        image_tag("HTTP://google.com")
+        # => "<img alt=\"Google\" src=\"HTTP://google.com\" />"
+        image_tag("http://google.com")
+        # => "<img alt=\"Google\" src=\"http://google.com\" />"
+
+    *David Celis + Rafael Mendonça França*
+
+*   Fix explicit names on multiple file fields. If a file field tag has
+    the multiple option, it is turned into an array field (appending `[]`),
+    but if an explicit name is passed to `file_field` the `[]` is not
+    appended.
+    Fixes #9830.
+
+    *Ryan McGeary*
+
+*   Fix assets loading performance in 3.2.13.
+
+    Issue #8756 uses Sprockets for resolving files that already exist on disk,
+    for those files their extensions don't need to be rewritten.
+
+    Fixes #9803.
+
+    *Fred Wu*
+
+*   Fix `ActionController#action_missing` not being called.
+    Fixes #9799.
+
+    *Janko Luin*
+
+*   `ActionView::Helpers::NumberHelper#number_to_human` returns the number unaltered when
+    the units hash does not contain the needed key, e.g. when the number provided is less
+    than the largest key provided.
+
+    Examples:
+
+        number_to_human(123, units: {})                # => 123
+        number_to_human(123, units: { thousand: 'k' }) # => 123
+
+    Fixes #9269.
+    Backport #9347.
+
+    *Michael Hoffman*
+
+*   Include I18n locale fallbacks in view lookup.
+    Fixes GH#3512.
+
+    *Juan Barreneche*
+
+*   Fix `ActionDispatch::Request#formats` when the Accept request-header is an
+    empty string. Fix #7774 [Backport #8977, #9541]
+
+    *Soylent + Maxime Réty*
+
+
+## Rails 3.2.13 (Mar 18, 2013) ##
+
+*   Fix incorrectly appended square brackets to a multiple select box
+    if an explicit name has been given and it already ends with "[]".
+
+    Before:
+
+        select(:category, [], {}, multiple: true, name: "post[category][]")
+        # => <select name="post[category][][]" ...>
+
+    After:
+
+        select(:category, [], {}, multiple: true, name: "post[category][]")
+        # => <select name="post[category][]" ...>
+
+    Backport #9616.
+
+    *Olek Janiszewski*
+
+*   Determine the controller#action from only the matched path when using the
+    shorthand syntax. Previously the complete path was used, which led
+    to problems with nesting (scopes and namespaces).
+    Fixes #7554.
+    Backport #9361.
+
+    Example:
+
+        # this will route to questions#new
+        scope ':locale' do
+          get 'questions/new'
+        end
+
+    *Yves Senn*
+
+*   Fix `assert_template` with `render :stream => true`.
+    Fix #1743.
+    Backport #5288.
+
+    *Sergey Nartimov*
+
+*   Eagerly populate the http method lookup cache so local project inflections do
+    not interfere with use of underscore method ( and we don't need locks )
+
+    *Aditya Sanghi*
+
+*   `BestStandardsSupport` no longer duplicates `X-UA-Compatible` values on
+    each request to prevent header size from blowing up.
+
+    *Edward Anderson*
+
+*   Fixed JSON params parsing regression for non-object JSON content.
+
+    *Dylan Smith*
+
+*   Prevent unnecessary asset compilation when using `javascript_include_tag` on
+    files with non-standard extensions.
+
+    *Noah Silas*
+
+*   Fixes issue where duplicate assets can be required with sprockets.
+
+    *Jeremy Jackson*
+
+*   Bump `rack` dependency to 1.4.3, eliminate `Rack::File` headers deprecation warning.
+
+    *Sam Ruby + Carlos Antonio da Silva*
+
+*   Do not append second slash to `root_url` when using `trailing_slash: true`
+
+    Fix #8700.
+    Backport #8701.
+
+    Example:
+        # before
+        root_url # => http://test.host//
+
+        # after
+        root_url # => http://test.host/
+
+    *Yves Senn*
+
+*   Fix a bug in `content_tag_for` that prevents it for work without a block.
+
+    *Jasl*
+
+*   Clear url helper methods when routes are reloaded by removing the methods
+    explicitly rather than just clearing the module because it didn't work
+    properly and could be the source of a memory leak.
+
+    *Andrew White*
+
+*   Fix a bug in `ActionDispatch::Request#raw_post` that caused `env['rack.input']`
+    to be read but not rewound.
+
+    *Matt Venables*
+
+*   More descriptive error messages when calling `render :partial` with
+    an invalid `:layout` argument.
+
+    Fixes #8376.
+
+        render :partial => 'partial', :layout => true
+        # results in ActionView::MissingTemplate: Missing partial /true
+
+    *Yves Senn*
+
+*   Accept symbols as `#send_data` :disposition value. [Backport #8329] *Elia Schito*
+
+*   Add i18n scope to `distance_of_time_in_words`. [Backport #7997] *Steve Klabnik*
+
+*   Fix side effect of `url_for` changing the `:controller` string option. [Backport #6003]
+    Before:
+
+        controller = '/projects'
+        url_for :controller => controller, :action => 'status'
+
+        puts controller #=> 'projects'
+
+    After
+
+        puts controller #=> '/projects'
+
+    *Nikita Beloglazov + Andrew White*
+
+*   Introduce `ActionView::Template::Handlers::ERB.escape_whitelist`. This is a list
+    of mime types where template text is not html escaped by default. It prevents `Jack & Joe`
+    from rendering as `Jack &amp; Joe` for the whitelisted mime types. The default whitelist
+    contains text/plain. Fix #7976 [Backport #8235]
+
+    *Joost Baaij*
+
+*   `BestStandardsSupport` middleware now appends it's `X-UA-Compatible` value to app's
+    returned value if any. Fix #8086 [Backport #8093]
+
+    *Nikita Afanasenko*
+
+*   prevent double slashes in engine urls when `Rails.application.default_url_options[:trailing_slash] = true` is set
+    Fix #7842
+
+    *Yves Senn*
+
+*   Fix input name when `:multiple => true` and `:index` are set.
+
+    Before:
+
+        check_box("post", "comment_ids", { :multiple => true, :index => "foo" }, 1)
+        #=> <input name=\"post[foo][comment_ids]\" type=\"hidden\" value=\"0\" /><input id=\"post_foo_comment_ids_1\" name=\"post[foo][comment_ids]\" type=\"checkbox\" value=\"1\" />
+
+    After:
+
+        check_box("post", "comment_ids", { :multiple => true, :index => "foo" }, 1)
+        #=> <input name=\"post[foo][comment_ids][]\" type=\"hidden\" value=\"0\" /><input id=\"post_foo_comment_ids_1\" name=\"post[foo][comment_ids][]\" type=\"checkbox\" value=\"1\" />
+
+    Fix #8108
+
+    *Daniel Fox, Grant Hutchins & Trace Wax*
+
+
+## Rails 3.2.12 (Feb 11, 2013) ##
+
+*   No changes.
+
+
+## Rails 3.2.11 (Jan 8, 2013) ##
+
+*   Strip nils from collections on JSON and XML posts. [CVE-2013-0155]
+
+
+## Rails 3.2.10 (Jan 2, 2013) ##
+
+*   No changes.
+
 
 ## Rails 3.2.9 (Nov 12, 2012) ##
 

@@ -223,6 +223,7 @@ module ActiveSupport
     # Compare this time zone to the parameter. The two are compared first on
     # their offsets, and then by name.
     def <=>(zone)
+      return unless zone.respond_to?(:utc_offset) && zone.respond_to?(:name)
       result = (utc_offset <=> zone.utc_offset)
       result = (name <=> zone.name) if result == 0
       result
@@ -267,14 +268,24 @@ module ActiveSupport
     #
     #   Time.zone.now                 # => Fri, 31 Dec 1999 14:00:00 HST -10:00
     #   Time.zone.parse('22:30:00')   # => Fri, 31 Dec 1999 22:30:00 HST -10:00
-    def parse(str, now=now)
-      date_parts = Date._parse(str)
-      return if date_parts.blank?
-      time = Time.parse(str, now) rescue DateTime.parse(str)
-      if date_parts[:offset].nil?
-        ActiveSupport::TimeWithZone.new(nil, self, time)
+    def parse(str, now=self.now)
+      parts = Date._parse(str, false)
+      return if parts.empty?
+
+      time = Time.utc(
+        parts.fetch(:year, now.year),
+        parts.fetch(:mon, now.month),
+        parts.fetch(:mday, now.day),
+        parts.fetch(:hour, 0),
+        parts.fetch(:min, 0),
+        parts.fetch(:sec, 0),
+        parts.fetch(:sec_fraction, 0) * 1000000
+      )
+
+      if parts[:offset]
+        TimeWithZone.new(time - parts[:offset], self)
       else
-        time.in_time_zone(self)
+        TimeWithZone.new(nil, self, time)
       end
     end
 

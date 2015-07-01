@@ -67,7 +67,7 @@ class Class
   #   object.setting = false  # => NoMethodError
   def class_attribute(*attrs)
     options = attrs.extract_options!
-    instance_reader = options.fetch(:instance_reader, true)
+    instance_reader = instance_reader = options.fetch(:instance_reader, true)
     instance_writer = options.fetch(:instance_writer, true)
 
     attrs.each do |name|
@@ -109,7 +109,9 @@ class Class
   end
 
   private
-  def singleton_class?
-    ancestors.first != self
-  end
+    unless respond_to?(:singleton_class?)
+      def singleton_class?
+        ancestors.first != self
+      end
+    end
 end

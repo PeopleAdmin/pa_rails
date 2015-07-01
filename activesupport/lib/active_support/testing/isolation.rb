@@ -12,8 +12,8 @@ module ActiveSupport
     end
 
     class ProxyTestResult
-      def initialize
-        @calls = []
+      def initialize(calls = [])
+        @calls = calls
       end
 
       def add_error(e)
@@ -25,6 +25,14 @@ module ActiveSupport
         @calls.each do |name, args|
           result.send(name, *args)
         end
+      end
+
+      def marshal_dump
+        @calls
+      end
+
+      def marshal_load(calls)
+        initialize(calls)
       end
 
       def method_missing(name, *args)
@@ -148,7 +156,12 @@ end
 
 # Only in subprocess for windows / jruby.
 if ENV['ISOLATION_TEST']
-  require "test/unit/collector/objectspace"
+  begin
+    require "test/unit/collector/objectspace"
+  rescue LoadError => e
+    raise LoadError, "Please add test-unit gem to your Gemfile: `gem 'test-unit', '~> 3.0'` (#{e.message})", e.backtrace
+  end
+
   class Test::Unit::Collector::ObjectSpace
     def include?(test)
       super && test.method_name == ENV['ISOLATION_TEST']

@@ -64,10 +64,21 @@ db_namespace = namespace :db do
     end
   end
 
+  # If neither encoding nor collation is specified, use the utf-8 defaults.
   def mysql_creation_options(config)
-    @charset   = ENV['CHARSET']   || 'utf8'
-    @collation = ENV['COLLATION'] || 'utf8_unicode_ci'
-    {:charset => (config['encoding'] || @charset), :collation => (config['collation'] || @collation)}
+    default_charset   = ENV['CHARSET']    || 'utf8'
+    default_collation = ENV['COLLATION']  || 'utf8_unicode_ci'
+
+    Hash.new.tap do |options|
+      options[:charset]     = config['encoding']   if config.include? 'encoding'
+      options[:collation]   = config['collation']  if config.include? 'collation'
+
+      # Set default charset only when collation isn't set.
+      options[:charset]   ||= default_charset unless options[:collation]
+
+      # Set default collation only when charset is also default.
+      options[:collation] ||= default_collation if options[:charset] == default_charset
+    end
   end
 
   def create_database(config)
@@ -101,9 +112,12 @@ db_namespace = namespace :db do
           error_class = config['adapter'] =~ /mysql2/ ? Mysql2::Error : Mysql::Error
         end
         access_denied_error = 1045
+
+        create_options = mysql_creation_options(config)
+
         begin
           ActiveRecord::Base.establish_connection(config.merge('database' => nil))
-          ActiveRecord::Base.connection.create_database(config['database'], mysql_creation_options(config))
+          ActiveRecord::Base.connection.create_database(config['database'], create_options)
           ActiveRecord::Base.establish_connection(config)
         rescue error_class => sqlerr
           if sqlerr.errno == access_denied_error
@@ -119,7 +133,7 @@ db_namespace = namespace :db do
             ActiveRecord::Base.establish_connection(config)
           else
             $stderr.puts sqlerr.error
-            $stderr.puts "Couldn't create database for #{config.inspect}, charset: #{config['encoding'] || @charset}, collation: #{config['collation'] || @collation}"
+            $stderr.puts "Couldn't create database for #{config.inspect}, charset: #{create_options[:charset]}, collation: #{create_options[:collation]}"
             $stderr.puts "(if you set the charset manually, make sure you have a matching collation)" if config['encoding']
           end
         end
@@ -341,7 +355,7 @@ db_namespace = namespace :db do
       base_dir     = File.join [Rails.root, ENV['FIXTURES_PATH'] || %w{test fixtures}].flatten
       fixtures_dir = File.join [base_dir, ENV['FIXTURES_DIR']].compact
 
-      (ENV['FIXTURES'] ? ENV['FIXTURES'].split(/,/) : Dir["#{fixtures_dir}/**/*.{yml,csv}"].map {|f| f[(fixtures_dir.size + 1)..-5] }).each do |fixture_file|
+      (ENV['FIXTURES'] ? ENV['FIXTURES'].split(/,/) : Dir["#{fixtures_dir}/**/*.yml"].map {|f| f[(fixtures_dir.size + 1)..-5] }).each do |fixture_file|
         ActiveRecord::Fixtures.create_fixtures(fixtures_dir, fixture_file)
       end
     end
@@ -413,17 +427,18 @@ db_namespace = namespace :db do
         end
         `pg_dump -i -s -x -O -f #{Shellwords.escape(filename)} #{search_path} #{Shellwords.escape(config['database'])}`
         raise 'Error dumping database' if $?.exitstatus == 1
+        File.open(filename, "a") { |f| f << "SET search_path TO #{ActiveRecord::Base.connection.schema_search_path};\n\n" }
       when /sqlite/
         dbfile = config['database']
         `sqlite3 #{dbfile} .schema > #{filename}`
       when 'sqlserver'
         `smoscript -s #{config['host']} -d #{config['database']} -u #{config['username']} -p #{config['password']} -f #{filename} -A -U`
       when "firebird"
-        set_firebird_env(abcs[Rails.env])
-        db_string = firebird_db_string(abcs[Rails.env])
+        set_firebird_env(config)
+        db_string = firebird_db_string(config)
         sh "isql -a #{db_string} > #{filename}"
       else
-        raise "Task not supported by '#{abcs[Rails.env]["adapter"]}'"
+        raise "Task not supported by '#{config['adapter']}'"
       end
 
       if ActiveRecord::Base.connection.supports_migrations?

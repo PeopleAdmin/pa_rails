@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+require 'active_support/core_ext/hash/keys'
+require 'active_support/core_ext/hash/reverse_merge'
 require 'active_support/core_ext/big_decimal/conversions'
 require 'active_support/core_ext/float/rounding'
 require 'active_support/core_ext/object/blank'
@@ -127,14 +129,19 @@ module ActionView
       #
       #  number_to_currency(-1234567890.50, :negative_format => "(%u%n)")
       #  # => ($1,234,567,890.50)
-      #  number_to_currency(1234567890.50, :unit => "&pound;", :separator => ",", :delimiter => "")
-      #  # => &pound;1234567890,50
-      #  number_to_currency(1234567890.50, :unit => "&pound;", :separator => ",", :delimiter => "", :format => "%n %u")
-      #  # => 1234567890,50 &pound;
+      #  number_to_currency(1234567890.50, :unit => "R$", :separator => ",", :delimiter => "")
+      #  # => R$1234567890,50
+      #  number_to_currency(1234567890.50, :unit => "R$", :separator => ",", :delimiter => "", :format => "%n %u")
+      #  # => 1234567890,50 R$
       def number_to_currency(number, options = {})
         return unless number
 
         options.symbolize_keys!
+
+        options[:delimiter] = ERB::Util.html_escape(options[:delimiter]) if options[:delimiter]
+        options[:separator] = ERB::Util.html_escape(options[:separator]) if options[:separator]
+        options[:format] = ERB::Util.html_escape(options[:format]) if options[:format]
+        options[:negative_format] = ERB::Util.html_escape(options[:negative_format]) if options[:negative_format]
 
         defaults  = I18n.translate(:'number.format', :locale => options[:locale], :default => {})
         currency  = I18n.translate(:'number.currency.format', :locale => options[:locale], :default => {})
@@ -142,6 +149,7 @@ module ActionView
 
         defaults  = DEFAULT_CURRENCY_VALUES.merge(defaults).merge!(currency)
         defaults[:negative_format] = "-" + options[:format] if options[:format]
+
         options   = defaults.merge!(options)
 
         unit      = options.delete(:unit)
@@ -204,6 +212,9 @@ module ActionView
 
         options.symbolize_keys!
 
+        options[:delimiter] = ERB::Util.html_escape(options[:delimiter]) if options[:delimiter]
+        options[:separator] = ERB::Util.html_escape(options[:separator]) if options[:separator]
+
         defaults   = I18n.translate(:'number.format', :locale => options[:locale], :default => {})
         percentage = I18n.translate(:'number.percentage.format', :locale => options[:locale], :default => {})
         defaults  = defaults.merge(percentage)
@@ -252,6 +263,9 @@ module ActionView
       #  number_with_delimiter("112a", :raise => true)          # => raise InvalidNumberError
       def number_with_delimiter(number, options = {})
         options.symbolize_keys!
+
+        options[:delimiter] = ERB::Util.html_escape(options[:delimiter]) if options[:delimiter]
+        options[:separator] = ERB::Util.html_escape(options[:separator]) if options[:separator]
 
         begin
           Float(number)
@@ -358,7 +372,7 @@ module ActionView
 
       end
 
-      STORAGE_UNITS = [:byte, :kb, :mb, :gb, :tb].freeze
+      STORAGE_UNITS = [:byte, :kb, :mb, :gb, :tb]
 
       # Formats the bytes in +number+ into a more understandable
       # representation (e.g., giving it 1500 yields 1.5 KB). This
@@ -450,7 +464,7 @@ module ActionView
       end
 
       DECIMAL_UNITS = {0 => :unit, 1 => :ten, 2 => :hundred, 3 => :thousand, 6 => :million, 9 => :billion, 12 => :trillion, 15 => :quadrillion,
-        -1 => :deci, -2 => :centi, -3 => :mili, -6 => :micro, -9 => :nano, -12 => :pico, -15 => :femto}.freeze
+        -1 => :deci, -2 => :centi, -3 => :mili, -6 => :micro, -9 => :nano, -12 => :pico, -15 => :femto}
 
       # Pretty prints (formats and approximates) a number in a way it
       # is more readable by humans (eg.: 1200000000 becomes "1.2
@@ -576,7 +590,7 @@ module ActionView
         units = options.delete :units
         unit_exponents = case units
         when Hash
-          units
+          units = Hash[units.map { |k, v| [k, ERB::Util.html_escape(v)] }]
         when String, Symbol
           I18n.translate(:"#{units}", :locale => options[:locale], :raise => true)
         when nil
@@ -591,7 +605,7 @@ module ActionView
 
         unit = case units
         when Hash
-          units[DECIMAL_UNITS[display_exponent]]
+          units[DECIMAL_UNITS[display_exponent]] || ''
         when String, Symbol
           I18n.translate(:"#{units}.#{DECIMAL_UNITS[display_exponent]}", :locale => options[:locale], :count => number.to_i)
         else
